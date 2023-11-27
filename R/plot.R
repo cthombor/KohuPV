@@ -5,6 +5,7 @@ require(ggiraph) # interactive graphs
 require(ggiraphExtra) # visualise predictions from multiple regression models
 
 load("data/gw.rda")
+load("data/gw.heat.hour.rda")
 load("data/sc.rda")
 load("data/sc.all.rda")
 load("data/sc.hist.rda")
