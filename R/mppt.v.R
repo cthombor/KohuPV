@@ -23,6 +23,15 @@ gw.heat.qhour |>
   ggplot(aes(x=mean.V.MPPT, y=mean.I.MPPT)) +
   geom_boxplot(aes(group=cut_number(mean.V.MPPT, 10)))
 
+gw.heat.qhour |>
+  ggplot(aes(x=max.V.MPPT, y=mean.I.MPPT)) +
+  geom_boxplot(aes(group=cut_number(max.V.MPPT, 10)))
+
+gw.heat.qhour |>
+  ggplot(aes(x=max.V.MPPT, y=mean.V.MPPT)) +
+  geom_boxplot(aes(group=cut_number(max.V.MPPT, 10)))
+
+
 summary(gw.heat.qhour$mean.V.MPPT)
 
 gw.heat.qhour |>
@@ -72,11 +81,11 @@ gw.heat.hour.5pm |>
 
 
 
-# ChevEnergy stacked with netGenHour
+# DGEnergy stacked with netGenHour
 
 gw.pivot <- gw.heat.hour |>
   pivot_longer(
-    cols = c("netGenHour", "CheveletEnergy"),
+    cols = c("netGenHour", "DGEnergy"),
     names_to = "type",
     values_to = "kWh"
   )
@@ -208,7 +217,7 @@ summary(gw.heat.hour$genHour)
 # Since every kW of output power produces (roughly) a 1/12.2 deg/h rise in its
 # temperature, the additional 2.8 deg/h rise in temperature due to aging (after
 # about 6 years of operation: 20kh) is 2.8/12.2 = 230W of increased "overhead"
-# -- for an inverter which started its life (according to my Chevelet model-fit)
+# -- for an inverter which started its life (according to my DG model-fit)
 # with an equivalent series resistance of about 0.5 ohms, and an equivalent
 # parallel resistance of about 1600 ohms.  At 170V 9A (i.e. about 1.53kW of
 # power from the array), (170*170)/1600 = 18W and 9*.5*.5 = 2.25W = 20W. To
@@ -308,7 +317,7 @@ summary(temp_modele)
 
 # I ca
 temp_modelf <- lm(dT.dt ~ mean.T +
-                  + CheveletEnergy + genHour,
+                  + DGEnergy + genHour,
                   gw.heat.hour)
 summary(temp_modelf)
 
@@ -341,17 +350,17 @@ ggplot(gw.heat.qhour,
   facet_wrap(gw.heat.qhour$Month)
 
 ggplot(gw.heat.hour,
-       aes(x=Hour, y=CheveletEnergy)) +
+       aes(x=Hour, y=DGEnergy)) +
   geom_boxplot(aes(group=cut_width(Hour, 1.0))) +
   facet_wrap(gw.heat.hour$Month)
 
 ggplot(gw.heat.hour,
-       aes(x=genHour, y=CheveletEnergy)) +
+       aes(x=genHour, y=DGEnergy)) +
   geom_smooth(aes(colour=Year)) +
   facet_wrap(gw.heat.hour$Month)
 
 ggplot(gw.heat.hour,
-       aes(CheveletEnergy, after_stat(density), colour=Year)) +
+       aes(DGEnergy, after_stat(density), colour=Year)) +
   geom_freqpoly(binwidth = 0.01) +
   facet_wrap(gw.heat.hour$Month)
 
@@ -366,7 +375,7 @@ ggplot(gw.heat.day,
   facet_wrap(gw.heat.day$Month)
 
 ggplot(gw.heat.hour,
-       aes(CheveletEnergy, after_stat(density), colour=Year)) +
+       aes(DGEnergy, after_stat(density), colour=Year)) +
   geom_freqpoly(binwidth = 0.05) +
   facet_wrap(gw.heat.hour$Month)
 
@@ -380,16 +389,16 @@ ggplot(gw.heat.day,
   geom_boxplot()
 
 ggplot(gw.heat.hour,
-       aes(x=Month, y=CheveletEnergy, colour=Year)) +
+       aes(x=Month, y=DGEnergy, colour=Year)) +
   geom_boxplot()
 
-ggplot(gw.heat.hour, aes(x=genHour, y=CheveletEnergy)) +
+ggplot(gw.heat.hour, aes(x=genHour, y=DGEnergy)) +
   geom_boxplot(aes(group=cut_width(genHour, 0.1)))
 
-ggplot(gw.heat.hour, aes(x=genHour, y=CheveletEnergy)) +
+ggplot(gw.heat.hour, aes(x=genHour, y=DGEnergy)) +
   geom_boxplot(aes(group=cut_number(genHour, 8)))
 
-ggplot(gw.heat.hour, aes(x=genHour, y=mean.CheveletEff)) +
+ggplot(gw.heat.hour, aes(x=genHour, y=mean.DGEff)) +
   geom_boxplot(aes(group=cut_number(genHour, 8)))
 
 gw |> ggplot(aes(V.MPPT.1.V.)) +

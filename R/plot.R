@@ -5,16 +5,15 @@ require(ggiraph) # interactive graphs
 require(ggiraphExtra) # visualise predictions from multiple regression models
 
 load("data/gw.rda")
-load("data/gw.heat.hour.rda")
 load("data/sc.rda")
 load("data/sc.all.rda")
 load("data/sc.hist.rda")
 
-# ChevEnergy stacked with netGenHour
+# DGEnergy stacked with netGenHour
 
 gw.pivot <- gw.heat.hour |>
   pivot_longer(
-    cols = c("netGenHour", "CheveletEnergy"),
+    cols = c("netGenHour", "DGEnergy"),
     names_to = "type",
     values_to = "kWh"
   )
@@ -124,17 +123,17 @@ ggplot(gw.heat.qhour,
   facet_wrap(gw.heat.qhour$Month)
 
 ggplot(gw.heat.hour,
-       aes(x=Hour, y=CheveletEnergy)) +
+       aes(x=Hour, y=DGEnergy)) +
   geom_boxplot(aes(group=cut_width(Hour, 1.0))) +
   facet_wrap(gw.heat.hour$Month)
 
 ggplot(gw.heat.hour,
-       aes(x=genHour, y=CheveletEnergy)) +
+       aes(x=genHour, y=DGEnergy)) +
   geom_smooth(aes(colour=Year)) +
   facet_wrap(gw.heat.hour$Month)
 
 ggplot(gw.heat.hour,
-       aes(CheveletEnergy, after_stat(density), colour=Year)) +
+       aes(DGEnergy, after_stat(density), colour=Year)) +
   geom_freqpoly(binwidth = 0.01) +
   facet_wrap(gw.heat.hour$Month)
 
@@ -149,7 +148,7 @@ ggplot(gw.heat.day,
   facet_wrap(gw.heat.day$Month)
 
 ggplot(gw.heat.hour,
-       aes(CheveletEnergy, after_stat(density), colour=Year)) +
+       aes(DGEnergy, after_stat(density), colour=Year)) +
   geom_freqpoly(binwidth = 0.05) +
   facet_wrap(gw.heat.hour$Month)
 
@@ -163,14 +162,14 @@ ggplot(gw.heat.day,
   geom_boxplot()
 
 ggplot(gw.heat.hour,
-       aes(x=Month, y=CheveletEnergy, colour=Year)) +
+       aes(x=Month, y=DGEnergy, colour=Year)) +
   geom_boxplot()
 
-ggplot(gw.heat.hour, aes(x=genHour, y=CheveletEnergy)) +
+ggplot(gw.heat.hour, aes(x=genHour, y=DGEnergy)) +
   geom_boxplot(aes(group=cut_width(genHour, 0.1)))
 
-ggplot(gw.heat.hour, aes(x=genHour, y=CheveletEnergy)) +
-  geom_boxplot(aes(group=cut_number(genHour, 8)))
+ggplot(gw.heat.hour, aes(x=genHour, y=DGEnergy)) +
+  geom_boxplot(aes(group=cut_number(genHour, 6)))
 
-ggplot(gw.heat.hour, aes(x=genHour, y=mean.CheveletEff)) +
-  geom_boxplot(aes(group=cut_number(genHour, 8)))
+ggplot(gw.heat.hour, aes(x=genHour, y=DGEff)) +
+  geom_boxplot(aes(group=cut_number(genHour, 6)))

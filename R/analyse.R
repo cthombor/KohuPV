@@ -5,10 +5,10 @@ require(ggiraphExtra) # visualise predictions from multiple regression models
 load("data/gw.rda")
 load("data/sc.rda")
 load("data/sc.all.rda")
+load("data/sc.hist.rda")
 load("data/recent0.daily.rda")
 load("data/trina270.daily.rda")
-load("data/recent.peimarsim.hourly.rda")
-load("data/recent.peimarsim.hourly.horizon.rda")
+load("data/gw.heat.hour.recent")
 load("data/firstyear.peimarsim.hourly.horizon.rda")
 load("data/augsep23.peimarsim.hourly.horizon.rda")
 load("data/recent.trinasim.hourly.rda")
@@ -16,7 +16,6 @@ load("data/gw.heat.rda")
 load("data/gw.heat.day.rda")
 load("data/gw.heat.hour.rda")
 load("data/gw.heat.qhour.rda")
-
 
 make_modelp0 <- function(data){
   lm(Actual.hour.kWh ~ PredictedPeimar.hour.kWh + 0, data)
@@ -26,20 +25,6 @@ make_modelp <- function(data){
   lm(Actual.hour.kWh ~ PredictedPeimar.hour.kWh, data)
 }
 
-#simulated Peimar 300W with geo horizon (vcc), recent 12-month period
-gw.heat.hour.recent <- inner_join(gw.heat.hour,
-                          recent.peimarsim.hourly.horizon,
-                          by=c("Year", "Month", "Day", "Hour")) |>
-#  mutate(shadowScan = factor(--shadowScan)) |>
-  rename(Actual.hour.kWh = genHour) |>
-  rename(PredictedPeimar.hour.kWh = E_Avail) |>
-  mutate(errPred = PredictedPeimar.hour.kWh - Actual.hour.kWh) |>
-  relocate(PredictedPeimar.hour.kWh : errPred, .after = Actual.hour.kWh)
-
-print(paste0("Actual output is ",
-            round(sum(gw.heat.hour.recent$Actual.hour.kWh)
-                  / sum(gw.heat.hour.recent$PredictedPeimar.hour.kWh),3)*100,
-            "% of predicted output with 300W Peimar panels"))
 
 gw.pivot <- gw.heat.hour.recent |> # prep for stacked barplot
   pivot_longer(
@@ -69,66 +54,154 @@ gw.heat.hour.recent |>
   geom_boxplot(aes(group=cut_width(Hour,1)))
 
 #simulated Trina 270W
-gw.heat.hour.recent <- inner_join(gw.heat.hour.recent,
-                           recent.trinasim.hourly,
-                           by=c("Year", "Month", "Day", "Hour")) |>
-  rename(PredictedTrina.hour.kWh = E_Avail) |>
-  mutate(errTrinaPred = PredictedTrina.hour.kWh - Actual.hour.kWh) |>
-  relocate(PredictedTrina.hour.kWh : errTrinaPred, .after = Actual.hour.kWh)
 
-print(paste0("Actual output is ",
-             round(sum(gw.heat.hour.recent$Actual.hour.kWh)
-                   / sum(gw.heat.hour.recent$PredictedTrina.hour.kWh),3)*100,
-             "% of predicted output with 270W Trina panels and Goodwe 2000"))
 gw.heat.hour.recent |>
   ggplot(aes(Hour, errTrinaPred)) +
   geom_boxplot(aes(group=cut_width(Hour,1)))
 
 gw.heat.hour.recent |>
+  ggplot(aes(Hour, Actual.hour.kWh/PredictedTrina.hour.kWh)) +
+  geom_boxplot(aes(group=cut_width(Hour,1)))
+
+gw.heat.hour.recent |>
+#  filter(Hour > 8 & Hour < 19) |>
+  mutate(Hour = as.factor(Hour)) |>
+  ggplot(aes(Hour, PredictedTrina.hour.kWh - Actual.hour.kWh)) +
+  geom_boxplot()
+
+gw.heat.hour.recent |>
+#  filter(Hour > 9 & Hour < 18) |>
+  mutate(Hour = as.factor(Hour)) |>
+  ggplot(aes(mean.I.MPPT, errTrinaPred)) +
+  geom_boxplot(aes(group=cut_width(mean.I.MPPT,1)))
+
+gw.heat.hour.recent |>
+  #  filter(Hour > 9 & Hour < 18) |>
+  mutate(Hour = as.factor(Hour)) |>
+  ggplot(aes(max.V.MPPT, errTrinaPred)) +
+  geom_boxplot(aes(group=cut_number(max.V.MPPT,5)))
+
+gw.heat.hour.recent |>
+  filter(Hour == 13) |>
+  ggplot(aes(mean.I.MPPT, PredictedTrina.hour.kWh - Actual.hour.kWh)) +
+  geom_boxplot(aes(group=cut_width(mean.I.MPPT,1))) +
+  labs(title="errTrina by I.MPPT, at Hour == 13")
+
+gw.heat.hour.recent |>
+  filter(Hour == 13) |>
+  ggplot(aes(max.V.MPPT, errTrinaPred)) +
+  geom_boxplot(aes(group=cut_number(max.V.MPPT,5))) +
+  labs(title="errTrina by max.V.MPPT, at Hour == 13")
+
+gw.heat.hour.recent |>
+  filter(Hour == 17) |>
+  ggplot(aes(max.V.MPPT, errTrinaPred)) +
+  geom_boxplot(aes(group=cut_number(max.V.MPPT,5)))+
+  labs(title="errTrina by max.V.MPPT, at Hour == 17")
+
+gw.heat.hour.recent |>
+  filter(Hour == 10) |>
+  ggplot(aes(max.V.MPPT, errTrinaPred)) +
+  geom_boxplot(aes(group=cut_number(max.V.MPPT,5)))+
+  labs(title="errTrina by max.V.MPPT, at Hour == 10")
+
+gw.heat.hour.recent |>
+  filter(Hour == 13) |>
+  ggplot(aes(max.V.MPPT, errTrinaPred)) +
+  geom_boxplot(aes(group=cut_number(max.V.MPPT,5))) +
+  labs(title="errTrina by max.V.MPPT, at Hour == 13")
+
+
+gw.heat.hour.recent |>
+  filter(Hour == 17) |>
+  ggplot(aes(sd.V.MPPT, PredictedTrina.hour.kWh - Actual.hour.kWh)) +
+  geom_boxplot(aes(group=cut_number(sd.V.MPPT,5))) +
+  labs(title="errTrina by sd(V.MPPT), at Hour == 17")
+
+gw.heat.hour.recent |>
+  filter(Hour == 10) |>
+  ggplot(aes(sd.V.MPPT, PredictedTrina.hour.kWh - Actual.hour.kWh)) +
+  geom_boxplot(aes(group=cut_number(sd.V.MPPT,5))) +
+  labs(title="errTrina by sd(V.MPPT), at Hour == 10")
+
+gw.heat.hour.recent |>
+  filter(Hour == 10) |>
+  group_by(Date) |>
+  mutate(maxV.MPPT = max(V.MPPT.1.V.)) |>
+  ungroup() |>
+  ggplot(aes(maxV.MPPT, PredictedTrina.hour.kWh - Actual.hour.kWh)) +
+  geom_boxplot(aes(group=cut_number(maxV.MPPT,5))) +
+  labs(title="errTrina by max(V.MPPT), at Hour == 10")
+
+
+
+gw.heat.hour.recent |>
   ggplot(aes(Month, errTrinaPred)) +
   geom_boxplot(aes(group=cut_width(Month,1)))
 
+gw.heat.hour.recent |>
+  ggplot(aes(T_Amb, errTrinaPred)) +
+  geom_boxplot(aes(group=cut_width(T_Amb,1)))
+
+
 gw.heat.hour.recent <-
-  mutate(gw.heat.hour.recent, LaggedChevPower = lag(mean.CheveletPower)) |>
+  mutate(gw.heat.hour.recent, LaggedDGPower = lag(mean.DGPower)) |>
   slice(-c(1:2)) # a hack, would be better to filter on NA in this field
 
-lmChevTL.recent <- lm(dT.dt ~ mean.T + mean.CheveletPower + LaggedChevPower,
+lmDGTL.recent <- lm(dT.dt ~ mean.T + mean.DGPower + LaggedDGPower,
                gw.heat.hour.recent)
-summary(lmChevTL.recent)
+summary(lmDGTL.recent)
 # Residuals:
-# Min      1Q  Median      3Q     Max
-# -5.2098 -1.0899  0.0476  1.0962  5.6534
+# Min     1Q Median     3Q    Max
+# -5.427 -1.067  0.062  1.109  5.569
 #
 # Coefficients:
-#                     Estimate Std. Error t value Pr(>|t|)
-#  (Intercept)         2.795013   0.133800   20.89   <2e-16 ***
-#  mean.T             -0.159717   0.006985  -22.86   <2e-16 ***
-#  mean.CheveletPower  0.321718   0.002677  120.19   <2e-16 ***
-#  LaggedChevPower    -0.223955   0.004021  -55.69   <2e-16 ***
+#                Estimate Std. Error t value Pr(>|t|)
+#  (Intercept)    2.795749   0.133488   20.94   <2e-16 ***
+#  mean.T        -0.160662   0.006996  -22.96   <2e-16 ***
+#  mean.DGPower   0.407663   0.003368  121.04   <2e-16 ***
+#  LaggedDGPower -0.283269   0.005088  -55.67   <2e-16 ***
 #  ---
-# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #
-# Residual standard error: 1.569 on 2940 degrees of freedom
-# Multiple R-squared:  0.8359,	Adjusted R-squared:  0.8357
-# F-statistic:  4991 on 3 and 2940 DF,  p-value: < 2.2e-16
+# Residual standard error: 1.559 on 2940 degrees of freedom
+# Multiple R-squared:  0.8378,	Adjusted R-squared:  0.8377
+# F-statistic:  5063 on 3 and 2940 DF,  p-value: < 2.2e-16
 
-# Interpretation: a slightly better fit than to all our data (in goodlmchev.R)
+# Interpretation: a slightly better fit than to all our data (in goodlmDG.R)
 # dT.dt (in degrees Celsius/hour) = 2.8 - 0.16*InverterTemp
-# + 0.32*InverterDissipation.W - 0.22*priorInverterDissipation.W
+# + 0.408*InverterDissipation.W - 0.283*priorInverterDissipation.W
 #
 # For example, when the inverter at 40 degrees is (estimated) as throwing off
 # 60W of power continuously, its temperature will rise by about 2.8 - 6.4
-# + (0.32-0.22)(60) = 2.8 - 6.4 + 6 = 2.4 degrees per hour.  If it were
-# throwing off 40W, the temp would still rise slightly: 2.8 - 6.4 + 4.0 = 0.4.
+# + (0.408-0.283)(60) = 2.8 - 6.4 + 7.5 = 3.9 degrees per hour.  If it were
+# throwing off 40W, the temp would still rise slightly: 2.8 - 6.4 + 5.0 = 1.4.
 #
-# Thermal equilibrium at 70W is (2.8 + 0.1(70))/0.16 = 61.5 degrees.
-#
-# Thermal equilibrium at 80W is (2.8 + 8)/0.16 = 67.5 degrees.
+# Thermal equilibrium at 70W is (2.8 + 0.125(70))/0.16 = 72.2 degrees.
 #
 # An over-temperature condition might arise at 70 degrees, i.e. when the
-# inverter is throwing off (70(0.16) - 2.8)/(0.10) = 84W.
+# inverter is throwing off (70(0.16) - 2.8)/(0.125) = 67W.
 
-plot(lmChevTL.recent)
+summary(gw.heat.hour.recent$mean.DGPower)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+# 0.000   4.459  21.840  20.921  32.510  63.448
+gwm <- max(gw.heat.hour.recent$mean.DGPower)
+gwmw <- which(gw.heat.hour.recent$mean.DGPower == gwm)
+print(paste0("Max DG power = ", round(gwm,1),
+             " at ", gw.heat.hour.recent$dateTime[gwmw],
+             ". Inverter temp = ",
+             gw.heat.hour.recent$max.T[gwmw]))
+summary(gw.heat.hour.recent$max.T)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+# 0.000   4.459  21.840  20.921  32.510  63.448
+tm <- max(gw.heat.hour.recent$max.T)
+tmw <- which(gw.heat.hour.recent$max.T == tm)
+print(paste0("Max inverter temp = ", tm,
+             " at ", gw.heat.hour.recent$dateTime[tm],
+             ". Inverter DG power = ",
+             round(gw.heat.hour.recent$mean.DGPower[tmw])))
+
+plot(lmDGTL.recent)
 # Resid v fitted shows significant nonlinearity.  Temperature drops of more
 # than 5 degrees are underpredicted i.e. a prediction of -10 is actually -12.
 # This nonlinearity is greater than in our full dataset, possibly suggesting
@@ -138,14 +211,17 @@ plot(lmChevTL.recent)
 
 gw.heat.hour.recent <- gw.heat.hour.recent |>
   mutate(
-    Residuals = lmChevTL.recent$residuals,
-    QYear = factor(quarter(ymd(Date), type = "year.quarter"))
+    Residuals = lmDGTL.recent$residuals,
   )
 
 gw.heat.hour.recent |> ggplot(aes(mean.V.MPPT, Residuals)) +
   geom_boxplot(aes(group=cut_width(mean.V.MPPT, 10)))
 # A very strong effect, quasi-linear in mean.V.MPPT
 # perhaps the effective shunt resistance has changed with age??
+
+gw.heat.hour.recent |> ggplot(aes(errTrinaPred, Residuals)) +
+  geom_boxplot(aes(group=cut_number(errTrinaPred, 5)))
+
 
 
 gw.heat.hour.recent |> ggplot(aes(mean.V.MPPT, Residuals)) +
@@ -154,28 +230,28 @@ gw.heat.hour.recent |> ggplot(aes(mean.V.MPPT, Residuals)) +
   geom_boxplot(aes(group=cut_number(mean.V.MPPT, 10)))
 # strong upward quasilinear trend, residual -1.5 at low V, rising to 0.5 at
 # 190V, and remaining high at high-V (low-A) MPPT states.  Suggestive of
-# inaccurate Chevelet model, a lower shunt resistance, higher series resistance
-# would probably decrease the regression coefficient on CheveletPower.
+# inaccurate DG model, a lower shunt resistance, higher series resistance
+# would probably decrease the regression coefficient on DGPower.
 
-lmChevTLV.recent <- lm(dT.dt ~ mean.T + mean.CheveletPower + LaggedChevPower
+lmDGTLV.recent <- lm(dT.dt ~ mean.T + mean.DGPower + LaggedDGPower
                        + mean.V.MPPT,
                        gw.heat.hour.recent)
-summary(lmChevTLV.recent)
+summary(lmDGTLV.recent)
 # Rsq rises to 0.854
 # coefficient of mean.V.MPPT is 0.025, i.e. +1 dT/dt when voltage rises by 40V
-plot(lmChevTLV.recent) # still nonlinear at low fitted values
+plot(lmDGTLV.recent) # still nonlinear at low fitted values
 
 gwii <- mutate(gw.heat.hour.recent,
                mean.Isq = mean.I.MPPT*mean.I.MPPT)
-lmChevTVII.recent <-
+lmDGTVII.recent <-
   lm(dT.dt ~ mean.T + mean.V.MPPT + mean.Isq, gwii)
-summary(lmChevTVII.recent)
+summary(lmDGTVII.recent)
 
-lmChevTVIIl.recent <-
+lmDGTVIIl.recent <-
   lm(dT.dt ~ mean.T + mean.V.MPPT + mean.Isq +
        lag(mean.Isq), gwii)
-summary(lmChevTVIIl.recent)
-plot(lmChevTVIIl.recent)
+summary(lmDGTVIIl.recent)
+plot(lmDGTVIIl.recent)
 
 
 gw.heat.hour.recent |> ggplot(aes(mean.I.MPPT*mean.I.MPPT, Residuals)) +
